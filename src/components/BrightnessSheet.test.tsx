@@ -10,7 +10,9 @@ function renderSheet(view: LightView | null = light) {
   const onClose = vi.fn();
   const onBrightness = vi.fn();
   const onPower = vi.fn();
-  const utils = render(<BrightnessSheet light={view} onClose={onClose} onBrightness={onBrightness} onPower={onPower} />);
+  const utils = render(
+    <BrightnessSheet light={view} disabled={false} onClose={onClose} onBrightness={onBrightness} onPower={onPower} />,
+  );
   return { ...utils, onClose, onBrightness, onPower };
 }
 
@@ -74,6 +76,7 @@ describe("BrightnessSheet", () => {
     rerender(
       <BrightnessSheet
         light={{ ...light, entry: { ...on, brightness: 254 } }}
+        disabled={false}
         onClose={onClose}
         onBrightness={onBrightness}
         onPower={onPower}
@@ -92,6 +95,7 @@ describe("BrightnessSheet", () => {
     rerender(
       <BrightnessSheet
         light={{ ...light, entry: { ...on, state: "OFF" } }}
+        disabled={false}
         onClose={onClose}
         onBrightness={onBrightness}
         onPower={onPower}
@@ -99,6 +103,45 @@ describe("BrightnessSheet", () => {
     );
     fireEvent.click(screen.getByRole("switch", { name: "電源" }));
     expect(onPower).toHaveBeenLastCalledWith("ON");
+  });
+
+  it("同じ明るさでも updatedAt が変われば表示を取り直し、同じ値を再送できる", async () => {
+    const { rerender, onClose, onBrightness, onPower } = renderSheet();
+    fireEvent.change(slider(), { target: { value: "60" } });
+    expect(onBrightness).toHaveBeenCalledTimes(1);
+    // 電球からの応答(値は 50% のまま = 送った 60 は反映されなかった)
+    rerender(
+      <BrightnessSheet
+        light={{ ...light, entry: { ...on, updatedAt: "t2" } }}
+        disabled={false}
+        onClose={onClose}
+        onBrightness={onBrightness}
+        onPower={onPower}
+      />,
+    );
+    expect(slider().value).toBe("50");
+    fireEvent.change(slider(), { target: { value: "60" } });
+    expect(onBrightness).toHaveBeenCalledTimes(2);
+  });
+
+  it("電源スイッチのタップ領域は 44px 以上", () => {
+    renderSheet();
+    expect(screen.getByRole("switch", { name: "電源" })).toHaveClass("min-h-11", "min-w-11");
+  });
+
+  it("disabled ならスライダーと電源が無効", () => {
+    const onBrightness = vi.fn();
+    render(
+      <BrightnessSheet light={light} disabled={true} onClose={() => {}} onBrightness={onBrightness} onPower={() => {}} />,
+    );
+    expect(slider()).toBeDisabled();
+    expect(screen.getByRole("switch", { name: "電源" })).toBeDisabled();
+  });
+
+  it("pending 中は電源が無効でスライダーは使える", () => {
+    renderSheet({ ...light, entry: { ...on, pending: true } });
+    expect(screen.getByRole("switch", { name: "電源" })).toBeDisabled();
+    expect(slider()).toBeEnabled();
   });
 
   it("背景のクリックと閉じるボタンで onClose", () => {

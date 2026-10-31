@@ -8,17 +8,19 @@ export const SLIDER_DEBOUNCE_MS = 300;
 interface Props {
   /** null なら何も描画しない */
   light: LightView | null;
+  /** 接続不良などで操作を止める */
+  disabled: boolean;
   onClose: () => void;
   onBrightness: (percent: number) => void;
   onPower: (power: LightPower) => void;
 }
 
-export function BrightnessSheet({ light, onClose, onBrightness, onPower }: Props) {
+export function BrightnessSheet({ light, disabled, onClose, onBrightness, onPower }: Props) {
   if (light === null) return null;
-  return <Sheet light={light} onClose={onClose} onBrightness={onBrightness} onPower={onPower} />;
+  return <Sheet light={light} disabled={disabled} onClose={onClose} onBrightness={onBrightness} onPower={onPower} />;
 }
 
-function Sheet({ light, onClose, onBrightness, onPower }: Props & { light: LightView }) {
+function Sheet({ light, disabled, onClose, onBrightness, onPower }: Props & { light: LightView }) {
   const { entry, label } = light;
   const known = entry.brightness !== null;
   const fromProps = known ? toPercent(entry.brightness as number) : 100;
@@ -46,14 +48,16 @@ function Sheet({ light, onClose, onBrightness, onPower }: Props & { light: Light
     [onBrightness],
   );
 
-  // ドラッグ中(未送信の値がある間)でなければ、電球側の明るさに表示を追従させる
+  // ドラッグ中(未送信の値がある間)でなければ、電球側の明るさに表示を追従させる。
+  // 値が同じでも updatedAt が変わっていれば電球からの新しい応答なので、表示を取り直し、同じ値を再送できるようにする
+  const syncedAt = entry.updatedAt;
   useEffect(() => {
     if (debounce.current === null) {
       setLocal(fromProps);
       setDirty(false);
       lastSent.current = null;
     }
-  }, [fromProps]);
+  }, [fromProps, syncedAt]);
 
   // 指を離した(change)ときは直ちに送る。React の onChange は値が同じだと発火しないので native で受ける
   useEffect(() => {
@@ -71,6 +75,11 @@ function Sheet({ light, onClose, onBrightness, onPower }: Props & { light: Light
     setLocal(value);
     setDirty(true);
     clearDebounce();
+    // React の onChange は native の input でも change でも呼ばれる。change(指を離した / キー操作)は即送信
+    if (e.nativeEvent.type === "change") {
+      commit(value);
+      return;
+    }
     debounce.current = setTimeout(() => {
       debounce.current = null;
       commit(value);
@@ -111,8 +120,9 @@ function Sheet({ light, onClose, onBrightness, onPower }: Props & { light: Light
           step="1"
           aria-label="明るさ"
           value={local}
+          disabled={disabled}
           onChange={onInput}
-          className="h-11 w-full accent-amber-500"
+          className="h-11 w-full accent-amber-500 disabled:opacity-50"
         />
         <div className="mt-5 flex items-center justify-between">
           <span className="text-sm text-gray-500 dark:text-slate-400">{isOn ? "点灯" : "消灯"}</span>
@@ -121,15 +131,20 @@ function Sheet({ light, onClose, onBrightness, onPower }: Props & { light: Light
             role="switch"
             aria-checked={isOn}
             aria-label="電源"
+            disabled={disabled || entry.pending}
             onClick={() => onPower(isOn ? "OFF" : "ON")}
-            className={`relative inline-block h-7 w-12 rounded-full transition ${
-              isOn ? "bg-amber-500" : "bg-gray-300 dark:bg-slate-600"
-            }`}
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full disabled:opacity-50"
           >
             <span
               aria-hidden="true"
-              className={`absolute top-1 size-5 rounded-full bg-white shadow transition ${isOn ? "left-6" : "left-1"}`}
-            />
+              className={`relative inline-block h-7 w-12 rounded-full transition ${
+                isOn ? "bg-amber-500" : "bg-gray-300 dark:bg-slate-600"
+              }`}
+            >
+              <span
+                className={`absolute top-1 size-5 rounded-full bg-white shadow transition ${isOn ? "left-6" : "left-1"}`}
+              />
+            </span>
           </button>
         </div>
       </div>

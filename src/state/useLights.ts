@@ -42,6 +42,8 @@ export function useLights(api: LightsApi = lightsApi): LightsController {
   const inFlight = useRef(false);
   const namesRef = useRef<string[] | null>(null);
   const pendingRef = useRef(new Set<string>());
+  /** pending 中に来た明るさ変更。捨てずに、完了後に最後の 1 件だけ送る */
+  const queuedRef = useRef(new Map<string, LightCommand>());
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refetchTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 
@@ -131,8 +133,12 @@ export function useLights(api: LightsApi = lightsApi): LightsController {
   }, [api, fetchLight, safeDispatch]);
 
   const run = useCallback(
-    async (name: string, command: LightCommand) => {
-      if (pendingRef.current.has(name)) return;
+    async function run(name: string, command: LightCommand): Promise<void> {
+      if (pendingRef.current.has(name)) {
+        // 明るさは最後の値を保留して後で送る。電源の切替は捨てる(二度押しで元に戻さない。UI 側も pending 中は無効)
+        if (command.brightness !== undefined) queuedRef.current.set(name, command);
+        return;
+      }
       pendingRef.current.add(name);
       dispatch({ type: "commandStarted", name });
       try {
@@ -148,6 +154,11 @@ export function useLights(api: LightsApi = lightsApi): LightsController {
         safeDispatch({ type: "commandFailed", name, code: codeOf(e) });
       } finally {
         pendingRef.current.delete(name);
+        const next = queuedRef.current.get(name);
+        if (next !== undefined) {
+          queuedRef.current.delete(name);
+          if (mounted.current) void run(name, next);
+        }
       }
     },
     [api, fetchLight, safeDispatch],

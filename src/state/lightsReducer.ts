@@ -5,6 +5,8 @@ import { emptyEntry, type LightEntry } from "./selectors";
 export type Connection = "ok" | "unreachable" | "degraded";
 
 export interface AppState {
+  /** GET /lights が 1 度でも成功したか(false の間は names が空でも「未登録」とは言えない) */
+  loaded: boolean;
   /** GET /lights の順 */
   names: string[];
   lights: Record<string, LightEntry>;
@@ -14,6 +16,7 @@ export interface AppState {
 }
 
 export const initialState: AppState = {
+  loaded: false,
   names: [],
   lights: {},
   connection: "ok",
@@ -74,7 +77,7 @@ export function lightsReducer(state: AppState, action: Action): AppState {
     case "namesLoaded": {
       const lights: Record<string, LightEntry> = {};
       for (const name of action.names) lights[name] = state.lights[name] ?? emptyEntry;
-      return { ...state, names: action.names, lights, connection: "ok" };
+      return { ...state, loaded: true, names: action.names, lights, connection: "ok" };
     }
     case "lightFetched":
     case "commandSucceeded":

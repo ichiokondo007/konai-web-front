@@ -89,6 +89,22 @@ describe("App", () => {
     expect(screen.getByRole("switch", { name: "すべての照明" })).toBeDisabled();
   });
 
+  it("名前一覧を取得する前は「電球が登録されていません」を出さない", () => {
+    api = createFakeApi([]);
+    render(<App api={api} />);
+    expect(screen.queryByText("電球が登録されていません")).not.toBeInTheDocument();
+  });
+
+  it("シートを開いたまま MQTT_UNAVAILABLE になるとスライダーと電源が無効", async () => {
+    await renderApp();
+    fireEvent.click(screen.getByRole("button", { name: "天井ライト の明るさ" }));
+    api.failNext("MQTT_UNAVAILABLE");
+    fireEvent.click(screen.getByRole("switch", { name: "電源" }));
+    await flush();
+    expect(screen.getByRole("slider", { name: "明るさ" })).toBeDisabled();
+    expect(screen.getByRole("switch", { name: "電源" })).toBeDisabled();
+  });
+
   it("電球が 0 個なら「電球が登録されていません」", async () => {
     await renderApp([]);
     expect(screen.getByText("電球が登録されていません")).toBeInTheDocument();

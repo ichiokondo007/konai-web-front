@@ -16,7 +16,7 @@ export default function App({ api = lightsApi }: { api?: LightsApi }) {
       <main className="mx-auto max-w-7xl space-y-4 p-4">
         <Header connection={state.connection} />
         <AllLightsCard summary={all} disabled={disabled} onToggle={() => void toggleAll()} />
-        {state.names.length === 0 && state.connection === "ok" ? (
+        {state.loaded && state.names.length === 0 && state.connection === "ok" ? (
           <p className="py-8 text-center text-gray-500 dark:text-slate-400">電球が登録されていません</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -34,6 +34,7 @@ export default function App({ api = lightsApi }: { api?: LightsApi }) {
       </main>
       <BrightnessSheet
         light={sheetLight}
+        disabled={disabled}
         onClose={closeSheet}
         onBrightness={(percent) => {
           if (state.sheet !== null) void setBrightness(state.sheet, percent);

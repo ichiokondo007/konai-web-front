@@ -21,6 +21,11 @@ describe("lightsReducer", () => {
     expect(s.connection).toBe("ok");
   });
 
+  it("初期状態は loaded=false で、namesLoaded で true になる", () => {
+    expect(initialState.loaded).toBe(false);
+    expect(lightsReducer(initialState, { type: "namesLoaded", names: [] }).loaded).toBe(true);
+  });
+
   it("namesLoaded は既存の entry を保持する", () => {
     const s = lightsReducer(loaded(), { type: "namesLoaded", names: ["living1", "desk"] });
     expect(s.lights.living1.state).toBe("ON");

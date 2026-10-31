@@ -147,6 +147,36 @@ describe("useLights: 操作", () => {
     expect(result.current.state.lights.desk).toMatchObject({ state: "ON", brightness: 127 });
   });
 
+  it("pending 中の setBrightness は捨てずに、完了後に最後の値だけを送る", async () => {
+    const { result } = await mount();
+    let release!: () => void;
+    const started: unknown[] = [];
+    const original = api.setLightState.bind(api);
+    api.setLightState = (name, command) =>
+      new Promise((resolve) => {
+        started.push(command);
+        release = () => resolve(original(name, command));
+      });
+    let first!: Promise<void>;
+    act(() => {
+      first = result.current.setBrightness("desk", 30);
+    });
+    await act(async () => {
+      void result.current.setBrightness("desk", 40);
+      void result.current.setBrightness("desk", 50);
+    });
+    expect(started).toEqual([{ brightness: 76 }]);
+    api.setLightState = original;
+    await act(async () => {
+      release();
+      await first;
+    });
+    await flush();
+    const sent = api.calls.filter((c) => c.method === "setLightState").map((c) => c.command);
+    expect(sent).toEqual([{ brightness: 76 }, { brightness: 127 }]);
+    expect(result.current.state.lights.desk.brightness).toBe(127);
+  });
+
   it("setPower は { state } を送る", async () => {
     const { result } = await mount();
     await act(() => result.current.setPower("living1", "OFF"));
