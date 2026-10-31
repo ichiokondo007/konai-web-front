@@ -210,10 +210,10 @@ API 側リポジトリへの変更はこれだけ。
     depends_on:
       - api
     ports:
-      - "80:80"
+      - "8088:80"
 ```
 
-同じ compose ネットワークに入るので、nginx からは `api` というホスト名で API に届く。家族は `http://<Pi の IP>/` を開くだけ。
+同じ compose ネットワークに入るので、nginx からは `api` というホスト名で API に届く。家族は `http://<Pi の IP>:8088/` を開くだけ(実装時の判明事項: Pi の 80 番は k3s の Traefik が横取りするため、公開ポートは 8088 にした)。
 
 ### ビルドと起動
 `../konai-web` で `docker compose up -d --build web`。フロントを直したら同じコマンドを再実行する。
