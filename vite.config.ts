@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: "jsdom",
       setupFiles: "./src/test/setup.ts",
+      // git worktree をリポジトリ内(.worktrees/)に作ると、その中のテストまで拾ってしまうため除外
+      exclude: ["**/node_modules/**", "**/dist/**", "**/.worktrees/**"],
     },
   };
 });
