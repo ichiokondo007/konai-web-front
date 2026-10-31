@@ -96,7 +96,8 @@ function Sheet({ light, disabled, onClose, onBrightness, onPower }: Props & { li
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="absolute inset-x-0 bottom-0 mx-auto max-w-xl rounded-t-3xl bg-white p-5 pb-8 text-gray-900 shadow-2xl dark:bg-slate-800 dark:text-slate-100"
+        // スマホ: 画面下からのシート(親指で届く)。sm 以上: ヘッダーの少し下に寄せた中央のダイアログ
+        className="absolute inset-x-0 bottom-0 mx-auto max-w-xl rounded-t-3xl bg-white p-5 pb-8 text-gray-900 shadow-2xl sm:top-24 sm:bottom-auto sm:rounded-3xl sm:pb-5 dark:bg-slate-800 dark:text-slate-100"
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{label}</h2>

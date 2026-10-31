@@ -35,6 +35,13 @@ describe("BrightnessSheet", () => {
     expect(slider().value).toBe("50");
   });
 
+  it("スマホでは下からのシート、sm 以上では上部に寄せたダイアログ", () => {
+    renderSheet();
+    const dialog = screen.getByRole("dialog", { name: "天井ライト" });
+    expect(dialog).toHaveClass("bottom-0", "rounded-t-3xl");
+    expect(dialog).toHaveClass("sm:bottom-auto", "sm:top-24", "sm:rounded-3xl");
+  });
+
   it("brightness が null なら「--」とスライダー 100", () => {
     renderSheet({ ...light, entry: { ...on, brightness: null } });
     expect(screen.getByTestId("percent")).toHaveTextContent("--");
