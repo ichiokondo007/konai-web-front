@@ -12,3 +12,6 @@ Thumbs.db
 
 # Claude Code ローカル設定
 .claude/settings.local.json
+
+# brainstorming visual companion
+.superpowers/
