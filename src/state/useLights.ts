@@ -35,7 +35,9 @@ export function useLights(api: LightsApi = lightsApi): LightsController {
   const [state, dispatch] = useReducer(lightsReducer, initialState);
 
   const stateRef = useRef(state);
-  stateRef.current = state;
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
   const mounted = useRef(false);
   const inFlight = useRef(false);
   const namesRef = useRef<string[] | null>(null);
