@@ -15,3 +15,8 @@ Thumbs.db
 
 # brainstorming visual companion
 .superpowers/
+
+# Node
+node_modules/
+dist/
+.env.local
