@@ -22,7 +22,11 @@ export const rooms: RoomConfig[] = [
     id: "living",
     name: "リビング",
     icon: "sofa",
-    lights: [{ name: "living1", label: "天井ライト" }],
+    lights: [
+      { name: "living1", label: "天井ライト" },
+      { name: "living2", label: "リビング2" },
+      { name: "living3", label: "リビング3" },
+    ],
   },
   {
     id: "desk",
